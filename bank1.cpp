@@ -6,9 +6,13 @@
 
 using namespace std;
 
-enum enoptions
+enum enmain_menue_options
 {
-	client_list = 1, add_clients, delete_client, update_client, find_client, Exit
+	client_list = 1, add_clients, delete_client, update_client, find_client, transactions, Exit
+};
+enum entransactions_menue_options
+{
+	deposit_amount = 1, withdraw_amount, total_balances, main_menue
 };
 
 struct Stclients_data
@@ -24,7 +28,7 @@ struct Stclients_data
 const string file_name = "clients.txt";
 
 void show_main_menue_screen();
-
+void show_transactions_menue_screen();
 //***************************** support & global function **********************************
 
 Stclients_data change_client_info(string account_number)
@@ -144,7 +148,7 @@ bool find_clients_by_account_number(vector <Stclients_data> Vclients_data, strin
 {
 
 
-	for (Stclients_data c : Vclients_data)
+	for (Stclients_data &c : Vclients_data)
 	{
 		if (c.account_number == account_number)
 		{
@@ -166,22 +170,226 @@ void print_client_information(Stclients_data client)
 	cout << "account balance : " << to_string(client.account_balance) << endl;
 }
 
+void print_client_record_balance_line(Stclients_data client)
+{
+	cout << "| " << left << setw(16) << client.account_number
+		 << "| " << left << setw(40) << client.client_name
+		 << "| " << left << setw(40) << client.account_balance;
+}
+
 string read_account_number()
 {
 	string account_number;
-	cout << "please enter account number : ";
+	cout << "\nplease enter account number : ";
 	getline(cin >> ws, account_number);
 
 	return account_number;
 }
 
+bool client_exists_by_account_number(string account_number, string file_name)
+{
+	fstream my_file;
+	my_file.open(file_name, ios::in);
+	string line;
+	if (my_file.is_open())
+	{
+		while (getline(my_file, line))
+		{
+			Stclients_data clients = convert_line_to_record(line, "#//#");
+			if (clients.account_number == account_number)
+			{
+				my_file.close();
+				return true;
+
+			}
+		}
+		my_file.close();
+
+	}
+	return false;
+}
+
 //*********************** program function ****************************************
+
 
 void show_ends_screen()
 {
 	cout << "\n-----------------------------------\n";
 	cout << "\tends screen :-)";
 	cout << "\n-----------------------------------\n";
+}
+
+
+void show_total_balances_screen()
+{
+	vector <Stclients_data> Vclients_data = load_clients_data_from_file(file_name);
+
+	cout << "\t\t\t\tbalances list (" << Vclients_data.size() << ") client(s) \n";
+	cout << "\n---------------------------------------------------------------------------------------------------\n\n";
+	cout << "| " << left << setw(16) << "account number "
+		 << "| " << left << setw(40) << "client name "
+		 << "| " << left << setw(40) << "balance " << endl;
+	cout << "\n---------------------------------------------------------------------------------------------------\n\n";
+
+	int total_balance = 0;
+	if (Vclients_data.size() == 0)
+		cout << "\t\t\t\tNo Clients Available In the System!";
+	else
+	{
+		
+		for (Stclients_data& C : Vclients_data)
+		{
+			print_client_record_balance_line(C);
+			total_balance += C.account_balance;
+			cout << endl;
+		}
+
+	}
+
+	cout << "\n---------------------------------------------------------------------------------------------------\n\n";
+
+	cout << "\t\t\t\t  total balance = " << total_balance << endl;
+}
+
+
+
+
+
+
+
+
+
+
+bool deposit_to_client_by_account_number(vector <Stclients_data> Vclients_data, string account_number,double amount)
+{
+	char option = 'Y';
+	cout << "\n\nAre you sure you want perfrom this transaction? y/n ? \n";
+	cin >> option;
+
+	if (toupper(option) == 'Y')
+	{
+		for (Stclients_data& C : Vclients_data)
+		{
+			if (C.account_number == account_number)
+			{
+				C.account_balance += amount;
+				save_client_data_to_file(file_name, Vclients_data);
+				cout << "\n\nDone Successfully. New balance is: " << C.account_balance;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+void show_withdraw_screen()
+{
+	cout << "\n-----------------------------------\n";
+	cout << "\twithdraw screen ";
+	cout << "\n-----------------------------------\n";
+	vector <Stclients_data> Vclients_data = load_clients_data_from_file(file_name);
+	string account_number = read_account_number();
+
+	Stclients_data client;
+	while (!find_clients_by_account_number(Vclients_data, account_number, client))
+	{
+		cout << "\nClient with [" << account_number << "] does not exist.\n";
+		account_number = read_account_number();
+	}
+	print_client_information(client);
+
+	double amount = 0;
+	cout << "please enter amount to withdraw : ";
+	cin >> amount;
+
+	while (amount > client.account_balance)
+	{
+		cout << "\nAmount Exceeds the balance, you can withdraw up to : " << client.account_balance << endl;
+		cout << "Please enter another amount? ";
+		cin >> amount;
+	}
+
+	deposit_to_client_by_account_number( Vclients_data, account_number,  amount * -1);
+}
+void show_deposit_screen()
+{
+   cout << "\n-----------------------------------\n";
+   cout << "\tdeposit screen ";
+   cout << "\n-----------------------------------\n";
+
+   vector <Stclients_data> Vclients_data = load_clients_data_from_file( file_name);
+   string account_number = read_account_number();
+
+   Stclients_data client;
+   while (!find_clients_by_account_number( Vclients_data,  account_number, client))
+   {
+	   cout << "\nClient with [" << account_number << "] does not exist.\n";
+	   account_number = read_account_number();
+   }
+
+   print_client_information(client); 
+
+   double amount = 0;
+   cout << "please enter amount to deposit : ";
+   cin >> amount;
+   deposit_to_client_by_account_number(Vclients_data, account_number,amount);
+}
+
+void go_back_to_transactions_menue()
+{
+	cout << "\n\n\nPress any key to go back to transactions menue...";
+	system("pause > 0");
+	show_transactions_menue_screen();
+
+}
+
+void perfrom_transactions_menue(entransactions_menue_options transactions_menue_options)
+{
+	switch (transactions_menue_options)
+	{
+	case entransactions_menue_options::deposit_amount:
+		system("cls");
+		show_deposit_screen();
+		go_back_to_transactions_menue();
+		break;
+	case entransactions_menue_options::withdraw_amount:
+		system("cls");
+		show_withdraw_screen();
+		go_back_to_transactions_menue();
+		break;
+	case entransactions_menue_options::total_balances:
+		system("cls");
+		show_total_balances_screen();
+		go_back_to_transactions_menue();
+		break;
+	case entransactions_menue_options::main_menue:
+		system("cls");
+		show_main_menue_screen();
+    }
+}
+
+
+short read_transactions_menue_options()
+{
+		short option;
+		cout << "choose what do you want to do [1 To 4] ? \n";
+		cin >> option;
+		return option;
+}
+
+void show_transactions_menue_screen()
+{
+	system("cls");
+	cout << "\n======================================================================\n";
+	cout << "\t\t\ttransactions menue screen";
+	cout << "\n======================================================================\n";
+	cout << "\t[1] deposit \n";
+	cout << "\t[2] withdraw  \n";
+	cout << "\t[3] total balance  \n";
+	cout << "\t[4] main menue \n";
+	cout << "\n======================================================================\n";
+
+	perfrom_transactions_menue(entransactions_menue_options(read_transactions_menue_options()));
+	
 }
 
 void show_find_client_information_screen()
@@ -311,28 +519,7 @@ void add_data_line_to_file(string my_file_name, string line)
 
 }
 
-bool client_exist_t_by_account_number(string account_number, string file_name)
-{
-	fstream my_file;
-	my_file.open(file_name, ios::in);
-	string line;
-	if (my_file.is_open())
-	{
-		while (getline(my_file, line))
-		{
-			Stclients_data clients = convert_line_to_record(line, "#//#");
-			if (clients.account_number == account_number)
-			{
-				my_file.close();
-				return true;
 
-			}
-		}
-		my_file.close();
-
-	}
-	return false;
-}
 
 Stclients_data read_client_data()
 
@@ -343,7 +530,7 @@ Stclients_data read_client_data()
 
 	getline(cin >> ws, client_data.account_number);
 
-	while (client_exist_t_by_account_number(client_data.account_number, file_name))
+	while (client_exists_by_account_number(client_data.account_number, file_name))
 	{
 		cout << "client with [" << client_data.account_number << "] already exists, entre another account number : ";
 		cin >> client_data.account_number;
@@ -446,49 +633,53 @@ void show_all_client_screen()
 }
 
 
-void perfrom_main_menue_options(enoptions options)
+void perfrom_main_menue_options(enmain_menue_options options)
 {
 	switch (options)
 	{
-	case enoptions::client_list:
+	case enmain_menue_options::client_list:
 		system("cls");
 		show_all_client_screen();
 		go_back_to_main_menue();
 		break;
-	case enoptions::add_clients:
+	case enmain_menue_options::add_clients:
 		system("cls");
 		show_add_new_clients_screen();
 		go_back_to_main_menue();
 		break;
-	case enoptions::delete_client:
+	case enmain_menue_options::delete_client:
 		system("cls");
 		show_delete_clients_screen();
 		go_back_to_main_menue();
 		break;
-	case enoptions::update_client:
+	case enmain_menue_options::update_client:
 		system("cls");
 		show_update_clients_screen();
 		go_back_to_main_menue();
 		break;
-	case enoptions::find_client:
+	case enmain_menue_options::find_client:
 		system("cls");
 		show_find_client_information_screen();
 		go_back_to_main_menue();
 		break;
-	case enoptions::Exit:
+	case enmain_menue_options::transactions:
+		system("cls");
+		show_transactions_menue_screen();
+		break;
+	case enmain_menue_options::Exit:
 		system("cls");
 		show_ends_screen();
 		break;
 	}
 }
 
-short read_main_menue_option()
+short read_main_menue_options()
 {
-	short options;
-	cout << "choose what do you want to do [1 To 6] ? \n";
-	cin >> options;
+	short option;
+	cout << "choose what do you want to do [1 To 7] ? \n";
+	cin >> option;
 
-	return options;
+	return option;
 }
 
 void show_main_menue_screen()
@@ -502,10 +693,11 @@ void show_main_menue_screen()
 	cout << "\t[3] delete client  \n";
 	cout << "\t[4] update client info \n";
 	cout << "\t[5] find client \n";
-	cout << "\t[6] exit ";
+	cout << "\t[6] transactions \n";
+	cout << "\t[7] exit ";
 	cout << "\n======================================================================\n";
 
-	perfrom_main_menue_options(enoptions(read_main_menue_option()));
+	perfrom_main_menue_options(enmain_menue_options(read_main_menue_options()));
 }
 
 int main()
