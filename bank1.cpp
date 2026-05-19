@@ -8,11 +8,16 @@ using namespace std;
 
 enum enmain_menue_options
 {
-	client_list = 1, add_clients, delete_client, update_client, find_client, transactions, Exit
+	client_list = 1, add_clients = 2, delete_client = 3, update_client = 4, find_client = 5, transactions = 6,
+	manage_users = 7, logout = 8
 };
 enum entransactions_menue_options
 {
 	deposit_amount = 1, withdraw_amount, total_balances, main_menue
+};
+enum enmanage_user_menue_options
+{
+	list_users = 1, add_new_user = 2, delete_user = 3, update_user = 4, find_user = 5, to_main_menue = 6
 };
 
 struct Stclients_data
@@ -25,10 +30,22 @@ struct Stclients_data
 	bool mark_client_for_delet = false;
 };
 
+struct stusers
+{
+	string username;
+	string password;
+	int permissions;
+	bool mark_for_delete = false;
+};
+
 const string file_name = "clients.txt";
+const string user_file_name = "users.txt";
+
+stusers current_user;
 
 void show_main_menue_screen();
 void show_transactions_menue_screen();
+void login();
 //***************************** support & global function **********************************
 
 Stclients_data change_client_info(string account_number)
@@ -87,7 +104,7 @@ string convert_record_to_line(Stclients_data client, string delim = "#//#")
 
 }
 
-Stclients_data convert_line_to_record(string line, string delim = "#//#")
+Stclients_data convert_client_line_to_record(string line, string delim = "#//#")
 {
 	vector <string> Vdata = split_string(line, delim);
 	Stclients_data client;
@@ -99,6 +116,19 @@ Stclients_data convert_line_to_record(string line, string delim = "#//#")
 	client.account_balance = stod(Vdata[4]);
 
 	return client;
+
+}
+
+stusers convert_users_line_to_record(string line, string delim = "#//#")
+{
+	vector <string> Vdata = split_string(line, delim);
+	stusers users;
+
+	users.username = Vdata[0];
+	users.password = Vdata[1];
+	users.permissions = stoi(Vdata[2]);
+
+	return users;
 
 }
 
@@ -134,7 +164,7 @@ vector <Stclients_data> load_clients_data_from_file(string file_name)
 		Stclients_data client;
 		while (getline(my_file, line))
 		{
-			client = convert_line_to_record(line, "#//#");
+			client = convert_client_line_to_record(line, "#//#");
 			Vclients_data.push_back(client);
 		}
 		my_file.close();
@@ -144,11 +174,31 @@ vector <Stclients_data> load_clients_data_from_file(string file_name)
 
 }
 
+vector <stusers> load_users_from_file(string user_file_name)
+{
+	stusers user;
+	vector <stusers> Vusers;
+	fstream my_file;
+	string line;
+	my_file.open(user_file_name, ios::in);
+	if (my_file.is_open())
+	{
+		while (getline(my_file,line))
+		{
+			user = convert_users_line_to_record(line);
+			Vusers.push_back(user);
+		}
+		my_file.close();
+	}
+	
+	return Vusers;
+}
+
 bool find_clients_by_account_number(vector <Stclients_data> Vclients_data, string account_number, Stclients_data& client_data)
 {
 
 
-	for (Stclients_data &c : Vclients_data)
+	for (Stclients_data& c : Vclients_data)
 	{
 		if (c.account_number == account_number)
 		{
@@ -159,6 +209,25 @@ bool find_clients_by_account_number(vector <Stclients_data> Vclients_data, strin
 	}
 	return false;
 }
+
+bool find_user_by_username_and_password(string username,string password,stusers &user)
+{
+	vector <stusers> Vusers = load_users_from_file(user_file_name);
+
+	for (stusers& S : Vusers)
+	{
+		if (S.username == username && S.password == password)
+		{
+			user = S;
+			return true;
+		}
+	}
+	return false;
+
+}
+
+
+
 
 void print_client_information(Stclients_data client)
 {
@@ -173,8 +242,15 @@ void print_client_information(Stclients_data client)
 void print_client_record_balance_line(Stclients_data client)
 {
 	cout << "| " << left << setw(16) << client.account_number
-		 << "| " << left << setw(40) << client.client_name
-		 << "| " << left << setw(40) << client.account_balance;
+		<< "| " << left << setw(40) << client.client_name
+		<< "| " << left << setw(40) << client.account_balance;
+}
+
+void print_user_record_line(stusers user)
+{
+	cout << "| " << left << setw(16) << user.username
+		<< "| " << left << setw(40) << user.password
+		<< "| " << left << setw(40) << user.permissions;
 }
 
 string read_account_number()
@@ -195,7 +271,7 @@ bool client_exists_by_account_number(string account_number, string file_name)
 	{
 		while (getline(my_file, line))
 		{
-			Stclients_data clients = convert_line_to_record(line, "#//#");
+			Stclients_data clients = convert_client_line_to_record(line, "#//#");
 			if (clients.account_number == account_number)
 			{
 				my_file.close();
@@ -211,14 +287,109 @@ bool client_exists_by_account_number(string account_number, string file_name)
 
 //*********************** program function ****************************************
 
+void add_new_users
 
-void show_ends_screen()
+void show_adding_users_screen()
 {
 	cout << "\n-----------------------------------\n";
-	cout << "\tends screen :-)";
+	cout << "\tadd new users screen ";
 	cout << "\n-----------------------------------\n";
+
+
 }
 
+void show_list_users_screen()
+{
+	vector < stusers> Vusers = load_users_from_file(user_file_name);
+
+	cout << "\t\t\t\tusers list (" << Vusers.size() << ") user(s) \n";
+
+	cout << "\n---------------------------------------------------------------------------------------------------\n\n";
+	cout << "| " << left << setw(16) << "user name "
+		<< "| " << left << setw(40) << "password "
+		<< "| " << left << setw(40) << "permissions " << endl;
+	cout << "\n---------------------------------------------------------------------------------------------------\n\n";
+
+	for (stusers& S : Vusers)
+	{
+		print_user_record_line(S);
+		cout << endl;
+	}
+	cout << "\n---------------------------------------------------------------------------------------------------\n\n";
+
+
+}
+
+void go_back_to_manage_users_menue()
+{
+	cout << "\n\n\nPress any key to go back to manage users menue...";
+	system("pause > 0");
+	show_manage_users_menue_screen();
+
+}
+
+void perfrom_manage_users_menue(enmanage_user_menue_options manage_user_menue_options)
+{
+	switch (manage_user_menue_options)
+	{
+	case enmanage_user_menue_options::list_users:
+		system("cls");
+		show_list_users_screen();
+		go_back_to_manage_users_menue();
+		break;
+	case enmanage_user_menue_options::add_new_user:
+		system("cls");
+		show_adding_users_screen();
+		go_back_to_manage_users_menue();
+		break;
+	case enmanage_user_menue_options::delete_user:
+		system("cls");
+		show_delete_user_screen();
+		go_back_to_manage_users_menue();
+		break;
+	case enmanage_user_menue_options::update_user:
+		system("cls");
+		show_update_user_screen();
+		go_back_to_manage_users_menue();
+		break;
+	case enmanage_user_menue_options::find_user:
+		system("cls");
+		show_find_user_screen();
+		go_back_to_manage_users_menue();
+		break;
+	case enmanage_user_menue_options::to_main_menue:
+		system("cls");
+		show_main_menue_screen();
+		break;
+	}
+}
+
+
+short read_manage_users_menue_options()
+{
+	short option;
+	cout << "choose what do you want to do [1 To 6] ? \n";
+	cin >> option;
+	return option;
+}
+
+void show_manage_users_menue_screen()
+{
+
+	system("cls");
+	cout << "\n======================================================================\n";
+	cout << "\t\t\tmanage_users_menue_screen";
+	cout << "\n======================================================================\n";
+	cout << "\t[1] list users \n";
+	cout << "\t[2] add new user  \n";
+	cout << "\t[3] delete user  \n";
+	cout << "\t[4] update user \n";
+	cout << "\t[5] find user  \n";
+	cout << "\t[6] main menue \n";
+	cout << "\n======================================================================\n";
+
+	perfrom_manage_users_menue(enmanage_user_menue_options(read_manage_users_menue_options()));
+}
 
 void show_total_balances_screen()
 {
@@ -227,8 +398,8 @@ void show_total_balances_screen()
 	cout << "\t\t\t\tbalances list (" << Vclients_data.size() << ") client(s) \n";
 	cout << "\n---------------------------------------------------------------------------------------------------\n\n";
 	cout << "| " << left << setw(16) << "account number "
-		 << "| " << left << setw(40) << "client name "
-		 << "| " << left << setw(40) << "balance " << endl;
+		<< "| " << left << setw(40) << "client name "
+		<< "| " << left << setw(40) << "balance " << endl;
 	cout << "\n---------------------------------------------------------------------------------------------------\n\n";
 
 	int total_balance = 0;
@@ -236,7 +407,7 @@ void show_total_balances_screen()
 		cout << "\t\t\t\tNo Clients Available In the System!";
 	else
 	{
-		
+
 		for (Stclients_data& C : Vclients_data)
 		{
 			print_client_record_balance_line(C);
@@ -260,7 +431,7 @@ void show_total_balances_screen()
 
 
 
-bool deposit_to_client_by_account_number(vector <Stclients_data> Vclients_data, string account_number,double amount)
+bool deposit_to_client_by_account_number(vector <Stclients_data> Vclients_data, string account_number, double amount)
 {
 	char option = 'Y';
 	cout << "\n\nAre you sure you want perfrom this transaction? y/n ? \n";
@@ -308,30 +479,30 @@ void show_withdraw_screen()
 		cin >> amount;
 	}
 
-	deposit_to_client_by_account_number( Vclients_data, account_number,  amount * -1);
+	deposit_to_client_by_account_number(Vclients_data, account_number, amount * -1);
 }
 void show_deposit_screen()
 {
-   cout << "\n-----------------------------------\n";
-   cout << "\tdeposit screen ";
-   cout << "\n-----------------------------------\n";
+	cout << "\n-----------------------------------\n";
+	cout << "\tdeposit screen ";
+	cout << "\n-----------------------------------\n";
 
-   vector <Stclients_data> Vclients_data = load_clients_data_from_file( file_name);
-   string account_number = read_account_number();
+	vector <Stclients_data> Vclients_data = load_clients_data_from_file(file_name);
+	string account_number = read_account_number();
 
-   Stclients_data client;
-   while (!find_clients_by_account_number( Vclients_data,  account_number, client))
-   {
-	   cout << "\nClient with [" << account_number << "] does not exist.\n";
-	   account_number = read_account_number();
-   }
+	Stclients_data client;
+	while (!find_clients_by_account_number(Vclients_data, account_number, client))
+	{
+		cout << "\nClient with [" << account_number << "] does not exist.\n";
+		account_number = read_account_number();
+	}
 
-   print_client_information(client); 
+	print_client_information(client);
 
-   double amount = 0;
-   cout << "please enter amount to deposit : ";
-   cin >> amount;
-   deposit_to_client_by_account_number(Vclients_data, account_number,amount);
+	double amount = 0;
+	cout << "please enter amount to deposit : ";
+	cin >> amount;
+	deposit_to_client_by_account_number(Vclients_data, account_number, amount);
 }
 
 void go_back_to_transactions_menue()
@@ -364,16 +535,16 @@ void perfrom_transactions_menue(entransactions_menue_options transactions_menue_
 	case entransactions_menue_options::main_menue:
 		system("cls");
 		show_main_menue_screen();
-    }
+	}
 }
 
 
 short read_transactions_menue_options()
 {
-		short option;
-		cout << "choose what do you want to do [1 To 4] ? \n";
-		cin >> option;
-		return option;
+	short option;
+	cout << "choose what do you want to do [1 To 4] ? \n";
+	cin >> option;
+	return option;
 }
 
 void show_transactions_menue_screen()
@@ -389,7 +560,7 @@ void show_transactions_menue_screen()
 	cout << "\n======================================================================\n";
 
 	perfrom_transactions_menue(entransactions_menue_options(read_transactions_menue_options()));
-	
+
 }
 
 void show_find_client_information_screen()
@@ -666,9 +837,13 @@ void perfrom_main_menue_options(enmain_menue_options options)
 		system("cls");
 		show_transactions_menue_screen();
 		break;
-	case enmain_menue_options::Exit:
+
+	case enmain_menue_options::manage_users:
 		system("cls");
-		show_ends_screen();
+
+	case enmain_menue_options::logout:
+		system("cls");
+		login();
 		break;
 	}
 }
@@ -694,15 +869,56 @@ void show_main_menue_screen()
 	cout << "\t[4] update client info \n";
 	cout << "\t[5] find client \n";
 	cout << "\t[6] transactions \n";
-	cout << "\t[7] exit ";
+	cout << "\t[7] manage users \n";
+	cout << "\t[8] logout ";
 	cout << "\n======================================================================\n";
 
 	perfrom_main_menue_options(enmain_menue_options(read_main_menue_options()));
 }
 
+
+
+bool load_current_user(string username, string password)
+{
+	
+	if (find_user_by_username_and_password(username, password, current_user))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void login()
+{
+	bool user_faild = false;
+	stusers user;
+	do
+	{
+		
+		if (user_faild)
+		{
+			cout << "invalid username/password\n";
+		}
+
+		cout << "enter username : ";
+		getline(cin >> ws, user.username);
+
+		cout << "enter username : ";
+		getline(cin >> ws, user.password);
+
+		user_faild = !load_current_user(user.username, user.username);
+
+	} while (user_faild);
+
+	show_main_menue_screen();
+}
+
 int main()
 {
-	show_main_menue_screen();
+	login();
 	system("pause>0");
 
 }
