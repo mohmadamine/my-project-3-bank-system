@@ -20,6 +20,14 @@ enum enmanage_user_menue_options
 	list_users = 1, add_new_user = 2, delete_user = 3, update_user = 4, find_user = 5, to_main_menue = 6
 };
 
+enum enmain_menue_permissions
+{
+	eAll = -1, pListClients = 1, pAddNewClient = 2, pDeleteClient
+	= 4,
+	pUpdateClients = 8, pFindClient = 16, pTranactions = 32,
+	pManageUsers = 64
+};
+
 struct Stclients_data
 {
 	string account_number;
@@ -71,6 +79,23 @@ Stclients_data change_client_info(string account_number)
 	return client_data;
 }
 
+stusers change_user_info(string username)
+
+{
+	stusers user;
+
+	user.username = username;
+
+	cout << "enter password : ";
+	getline(cin >> ws, user.password);
+
+
+	user.permissions = read_permissions_to_set();
+
+	return user;
+}
+
+
 vector <string> split_string(string S1, string delim)
 {
 	vector <string> Vworlds;
@@ -92,7 +117,7 @@ vector <string> split_string(string S1, string delim)
 	return Vworlds;
 }
 
-string convert_record_to_line(Stclients_data client, string delim = "#//#")
+string convert_client_record_to_line(Stclients_data client, string delim = "#//#")
 {
 	string Sclient_record = "";
 	Sclient_record += client.account_number + delim;
@@ -102,6 +127,15 @@ string convert_record_to_line(Stclients_data client, string delim = "#//#")
 	Sclient_record += to_string(client.account_balance);
 	return Sclient_record;
 
+}
+
+string convert_user_record_to_line(stusers user, string delim = "#//#")
+{
+	string user_line = "";
+	user_line += user.username + delim;
+	user_line += user.password + delim;
+	user_line += to_string(user.permissions);
+	return user_line;
 }
 
 Stclients_data convert_client_line_to_record(string line, string delim = "#//#")
@@ -119,7 +153,7 @@ Stclients_data convert_client_line_to_record(string line, string delim = "#//#")
 
 }
 
-stusers convert_users_line_to_record(string line, string delim = "#//#")
+stusers convert_user_line_to_record(string line, string delim = "#//#")
 {
 	vector <string> Vdata = split_string(line, delim);
 	stusers users;
@@ -143,7 +177,7 @@ void save_client_data_to_file(string file_name, vector <Stclients_data> Vclients
 		{
 			if (C.mark_client_for_delet == false)
 			{
-				line = convert_record_to_line(C);
+				line = convert_client_record_to_line(C);
 				my_file << line << endl;
 			}
 
@@ -151,6 +185,28 @@ void save_client_data_to_file(string file_name, vector <Stclients_data> Vclients
 		my_file.close();
 	}
 }
+
+void save_users_to_file(string user_file_name, vector <stusers> Vusers)
+{
+	fstream my_file;
+	string line;
+	my_file.open(user_file_name, ios::out);
+	if (my_file.is_open())
+	{
+		for (stusers &U : Vusers)
+		{
+			if (U.mark_for_delete == false)
+			{
+				line = convert_user_record_to_line(U);
+				my_file << line << endl;
+			}
+
+		}
+		my_file.close();
+	}
+}
+
+
 
 vector <Stclients_data> load_clients_data_from_file(string file_name)
 {
@@ -185,7 +241,7 @@ vector <stusers> load_users_from_file(string user_file_name)
 	{
 		while (getline(my_file,line))
 		{
-			user = convert_users_line_to_record(line);
+			user = convert_user_line_to_record(line);
 			Vusers.push_back(user);
 		}
 		my_file.close();
@@ -210,13 +266,13 @@ bool find_clients_by_account_number(vector <Stclients_data> Vclients_data, strin
 	return false;
 }
 
-bool find_user_by_username_and_password(string username,string password,stusers &user)
+bool find_user_by_username(string username,stusers &user)
 {
 	vector <stusers> Vusers = load_users_from_file(user_file_name);
 
 	for (stusers& S : Vusers)
 	{
-		if (S.username == username && S.password == password)
+		if (S.username == username)
 		{
 			user = S;
 			return true;
@@ -237,6 +293,16 @@ void print_client_information(Stclients_data client)
 	cout << "name            : " << client.client_name << "\n";
 	cout << "phone           : " << client.client_phone << "\n";
 	cout << "account balance : " << to_string(client.account_balance) << endl;
+}
+
+void print_user_short_information(stusers user)
+{
+	cout << "\n\nthe following are the user details : ";
+	cout << "\n---------------------------------------------\n";
+	cout << "account number  : " << user.username << "\n";
+	cout << "pin code        : " << user.password << "\n";
+	cout << "name            : " << user.permissions;
+	cout << "\n---------------------------------------------\n";
 }
 
 void print_client_record_balance_line(Stclients_data client)
@@ -261,7 +327,14 @@ string read_account_number()
 
 	return account_number;
 }
+string read_username()
+{
+	string username;
+	cout << "\nplease enter username : ";
+	getline(cin >> ws, username);
 
+	return username;
+}
 bool client_exists_by_account_number(string account_number, string file_name)
 {
 	fstream my_file;
@@ -285,9 +358,235 @@ bool client_exists_by_account_number(string account_number, string file_name)
 	return false;
 }
 
+bool user_exists_by_username(string username, string user_file_name)
+{
+	fstream my_file;
+	my_file.open(user_file_name, ios::in);
+	string line;
+	if (my_file.is_open())
+	{
+		while (getline(my_file, line))
+		{
+			stusers user = convert_user_line_to_record(line, "#//#");
+			if (user.username == username)
+			{
+				my_file.close();
+				return true;
+
+			}
+		}
+		my_file.close();
+
+	}
+	return false;
+}
+
+void add_data_line_to_file(string my_file_name, string line)
+{
+	fstream file;
+	file.open(my_file_name, ios::out | ios::app);
+	if (file.is_open())
+	{
+		file << line << endl;
+		file.close();
+	}
+
+}
+
 //*********************** program function ****************************************
 
-void add_new_users
+bool update_user_information(vector <stusers> Vusers,string username)
+{
+	char option = 'Y';
+	stusers user;
+	if (find_user_by_username(username,user))
+	{
+		print_user_short_information(user);
+
+		cout << "\n\nare you sure to want to update this user (y/n) ? \n";
+		cin >> option;
+
+		if (toupper(option) == 'Y')
+		{
+			for (stusers& U : Vusers)
+			{
+				if(U.username == username)
+				{
+					U = change_user_info(username);
+					break;
+				}
+			}
+
+			save_users_to_file(user_file_name, Vusers);
+			cout << "\n\nthis user updated successfully ! " << endl;
+			return true;
+		}
+	}
+
+	cout << "user with username (" << username << ") is not found ! " << endl;
+	return false;
+}
+
+void show_update_user_screen()
+{
+	cout << "\n-----------------------------------\n";
+	cout << "\tupdate user Screen";
+	cout << "\n-----------------------------------\n";
+
+	string username = read_username();
+	vector <stusers> Vusers = load_users_from_file(user_file_name);
+	update_user_information(Vusers, username);
+	
+}
+
+bool mark_user_for_delete_by_username(vector <stusers> Vusers, string username)
+{
+	for (stusers& U : Vusers)
+	{
+		if(U.username == username)
+		{
+			U.mark_for_delete = true;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool delete_user_by_username(vector <stusers> Vusers, string username)
+{
+	char option = 'Y';
+	stusers user;
+	if (find_user_by_username(username,user))
+	{
+		print_user_short_information(user);
+
+		cout << "\n\ndo you want to delete this user (y/n) ? \n";
+		cin >> option;
+
+		if (toupper(option) == 'Y')
+		{
+			save_users_to_file(user_file_name, Vusers);
+			Vusers = load_users_from_file(user_file_name);
+
+			cout << "\n\nthis user deleted successfully !" << endl;
+			return true;
+		}
+	}
+	else
+	{
+		cout << "\n\nuser with username (" << username << ") not found! " << endl;
+		return false;
+	}
+	
+	
+}
+
+void show_delete_user_screen()
+{
+	cout << "\n-----------------------------------\n";
+	cout << "\tdelete user Screen";
+	cout << "\n-----------------------------------\n";
+
+	string username = read_username();
+	vector <stusers> Vusers = load_users_from_file(user_file_name);
+	delete_user_by_username(Vusers, username);
+}
+
+int read_permissions_to_set()
+{
+	int permissions;
+	char option = 'Y';
+
+	cout << "do you want to give full access (Y/N) ?\n ";
+	cin >> option;
+	if (toupper(option) == 'Y')
+		return enmain_menue_permissions::eAll;
+	
+		cout << "\ndo you want to give access to : \n";
+
+		cout << "\nshow client list (Y/N) : ";
+		cin >> option;
+		if (toupper(option) == 'Y')
+			permissions += enmain_menue_permissions::pListClients;
+
+		cout << "\nadd new client (Y/N) : ";
+		cin >> option;
+		if (toupper(option) == 'Y')
+			permissions += enmain_menue_permissions::pAddNewClient;
+
+		cout << "\ndelete client (Y/N) : ";
+		cin >> option;
+		if (toupper(option) == 'Y')
+			permissions += enmain_menue_permissions::pDeleteClient;
+
+		cout << "\nupdate client (Y/N) : ";
+		cin >> option;
+		if (toupper(option) == 'Y')
+			permissions += enmain_menue_permissions::pUpdateClients;
+
+		cout << "\nfind client (Y/N) : ";
+		cin >> option;
+		if (toupper(option) == 'Y')
+			permissions += enmain_menue_permissions::pFindClient;
+
+		cout << "\ntransactions (Y/N) : ";
+		cin >> option;
+		if (toupper(option) == 'Y')
+			permissions += enmain_menue_permissions::pTranactions;
+
+		cout << "\nmanage users (Y/N) : ";
+		cin >> option;
+		if (toupper(option) == 'Y')
+			permissions += enmain_menue_permissions::pManageUsers;
+	
+
+	return permissions;
+}
+
+stusers read_new_user()
+{
+	stusers user;
+	cout << "please enter username : ";
+	getline(cin>>ws,user.username);
+
+	while (user_exists_by_username(user.username, user_file_name))
+	{
+		cout << "user with [" << user.username << "] already exists, enter another username : ";
+		getline(cin >> ws, user.username);
+	}
+
+	cout << "please enter password : ";
+	getline(cin >> ws, user.password);
+
+	user.permissions = read_permissions_to_set();
+
+	return user;
+
+}
+
+void add_new_user()
+{
+	stusers user = read_new_user();
+	add_data_line_to_file(user_file_name, convert_user_record_to_line(user));
+
+}
+
+void add_new_users()
+{
+
+	char option = 'Y';
+	stusers user;
+	do
+	{
+		cout << "adding new user : \n";
+		add_new_user();
+		
+		cout << "this user added successfully, do you want to add more user (y/n) ?\n";
+		cin >> option;
+
+	} while (toupper(option) == 'Y');
+}
 
 void show_adding_users_screen()
 {
@@ -295,7 +594,7 @@ void show_adding_users_screen()
 	cout << "\tadd new users screen ";
 	cout << "\n-----------------------------------\n";
 
-
+	add_new_users();
 }
 
 void show_list_users_screen()
@@ -678,17 +977,7 @@ void show_delete_clients_screen()
 	delete_client_by_account_number(Vclients_data, account_number);
 }
 
-void add_data_line_to_file(string my_file_name, string line)
-{
-	fstream file;
-	file.open(my_file_name, ios::out | ios::app);
-	if (file.is_open())
-	{
-		file << line << endl;
-		file.close();
-	}
 
-}
 
 
 
@@ -725,7 +1014,7 @@ Stclients_data read_client_data()
 void add_new_client()
 {
 	Stclients_data client = read_client_data();
-	add_data_line_to_file(file_name, convert_record_to_line(client));
+	add_data_line_to_file(file_name, convert_client_record_to_line(client));
 }
 
 void add_new_clients()
