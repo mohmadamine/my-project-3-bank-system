@@ -17,7 +17,7 @@ enum entransactions_menue_options
 };
 enum enmanage_user_menue_options
 {
-	list_users = 1, add_new_user = 2, delete_user = 3, update_user = 4, find_user = 5, to_main_menue = 6
+	elist_users = 1, eadd_new_user = 2, edelete_user = 3, eupdate_user = 4, find_user = 5, to_main_menue = 6
 };
 
 enum enmain_menue_permissions
@@ -53,6 +53,7 @@ stusers current_user;
 
 void show_main_menue_screen();
 void show_transactions_menue_screen();
+void show_manage_users_menue_screen();
 void login();
 //***************************** support & global function **********************************
 
@@ -78,10 +79,10 @@ Stclients_data change_client_info(string account_number)
 
 	return client_data;
 }
-
+int read_permissions_to_set();
 stusers change_user_info(string username)
-
 {
+	
 	stusers user;
 
 	user.username = username;
@@ -283,7 +284,24 @@ bool find_user_by_username(string username,stusers &user)
 }
 
 
+bool find_user_by_username_and_password(string username, string password, stusers& user)
+{
+	{
+		vector <stusers> Vusers = load_users_from_file(user_file_name);
 
+		for (stusers& S : Vusers)
+		{
+			if (S.username == username && S.password == password)
+			{
+				user = S;
+				return true;
+			}
+		}
+		return false;
+
+
+	}
+}
 
 void print_client_information(Stclients_data client)
 {
@@ -395,6 +413,36 @@ void add_data_line_to_file(string my_file_name, string line)
 
 //*********************** program function ****************************************
 
+
+
+void show_find_user_screen()
+{
+
+	cout << "\n-----------------------------------\n";
+	cout << "\tfind user Screen";
+	cout << "\n-----------------------------------\n";
+
+	string username = read_username();
+	vector <stusers> Vusers = load_users_from_file(user_file_name);
+	stusers user;
+
+	if (find_user_by_username(username, user))
+	{
+
+		print_user_short_information(user);
+
+	}
+	else
+	{
+		cout << "user with username (" << username << ") is not found ! " << endl;
+	}
+
+	
+	
+
+}
+
+
 bool update_user_information(vector <stusers> Vusers,string username)
 {
 	char option = 'Y';
@@ -495,7 +543,7 @@ void show_delete_user_screen()
 
 int read_permissions_to_set()
 {
-	int permissions;
+	int permissions = 0;
 	char option = 'Y';
 
 	cout << "do you want to give full access (Y/N) ?\n ";
@@ -542,6 +590,28 @@ int read_permissions_to_set()
 	
 
 	return permissions;
+}
+
+bool checking_of_permissions(enmain_menue_permissions permissions)
+{
+	if ((current_user.permissions & permissions) == permissions)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void show_access_denied_message()
+{
+	system("cls");
+	cout << "\n-----------------------------------------\n";
+	cout << "access denied,\n"
+		<< "you dont have permissions to do this,\n"
+		<< "please only go to your accessible options ";
+	cout << "\n-----------------------------------------\n";
 }
 
 stusers read_new_user()
@@ -631,22 +701,22 @@ void perfrom_manage_users_menue(enmanage_user_menue_options manage_user_menue_op
 {
 	switch (manage_user_menue_options)
 	{
-	case enmanage_user_menue_options::list_users:
+	case enmanage_user_menue_options::elist_users:
 		system("cls");
 		show_list_users_screen();
 		go_back_to_manage_users_menue();
 		break;
-	case enmanage_user_menue_options::add_new_user:
+	case enmanage_user_menue_options::eadd_new_user:
 		system("cls");
 		show_adding_users_screen();
 		go_back_to_manage_users_menue();
 		break;
-	case enmanage_user_menue_options::delete_user:
+	case enmanage_user_menue_options::edelete_user:
 		system("cls");
 		show_delete_user_screen();
 		go_back_to_manage_users_menue();
 		break;
-	case enmanage_user_menue_options::update_user:
+	case enmanage_user_menue_options::eupdate_user:
 		system("cls");
 		show_update_user_screen();
 		go_back_to_manage_users_menue();
@@ -672,22 +742,38 @@ short read_manage_users_menue_options()
 	return option;
 }
 
+void go_back_to_main_menue()
+{
+	cout << "\n\n\nPress any key to go back to Main Menu...";
+	system("pause > 0");
+	show_main_menue_screen();
+
+}
+
 void show_manage_users_menue_screen()
 {
+	if (checking_of_permissions(enmain_menue_permissions::pManageUsers))
+	{
+		show_access_denied_message();
+		go_back_to_main_menue();
+	}
 
-	system("cls");
-	cout << "\n======================================================================\n";
-	cout << "\t\t\tmanage_users_menue_screen";
-	cout << "\n======================================================================\n";
-	cout << "\t[1] list users \n";
-	cout << "\t[2] add new user  \n";
-	cout << "\t[3] delete user  \n";
-	cout << "\t[4] update user \n";
-	cout << "\t[5] find user  \n";
-	cout << "\t[6] main menue \n";
-	cout << "\n======================================================================\n";
+	else
+	{
+		system("cls");
+		cout << "\n======================================================================\n";
+		cout << "\t\t\tmanage_users_menue_screen";
+		cout << "\n======================================================================\n";
+		cout << "\t[1] list users \n";
+		cout << "\t[2] add new user  \n";
+		cout << "\t[3] delete user  \n";
+		cout << "\t[4] update user \n";
+		cout << "\t[5] find user  \n";
+		cout << "\t[6] main menue \n";
+		cout << "\n======================================================================\n";
 
-	perfrom_manage_users_menue(enmanage_user_menue_options(read_manage_users_menue_options()));
+		perfrom_manage_users_menue(enmanage_user_menue_options(read_manage_users_menue_options()));
+	}
 }
 
 void show_total_balances_screen()
@@ -848,35 +934,52 @@ short read_transactions_menue_options()
 
 void show_transactions_menue_screen()
 {
-	system("cls");
-	cout << "\n======================================================================\n";
-	cout << "\t\t\ttransactions menue screen";
-	cout << "\n======================================================================\n";
-	cout << "\t[1] deposit \n";
-	cout << "\t[2] withdraw  \n";
-	cout << "\t[3] total balance  \n";
-	cout << "\t[4] main menue \n";
-	cout << "\n======================================================================\n";
+	if (checking_of_permissions(enmain_menue_permissions::pTranactions))
+	{
+		show_access_denied_message();
+		go_back_to_main_menue();
+	}
+	else
+	{
 
-	perfrom_transactions_menue(entransactions_menue_options(read_transactions_menue_options()));
+		system("cls");
+		cout << "\n======================================================================\n";
+		cout << "\t\t\ttransactions menue screen";
+		cout << "\n======================================================================\n";
+		cout << "\t[1] deposit \n";
+		cout << "\t[2] withdraw  \n";
+		cout << "\t[3] total balance  \n";
+		cout << "\t[4] main menue \n";
+		cout << "\n======================================================================\n";
+
+		perfrom_transactions_menue(entransactions_menue_options(read_transactions_menue_options()));
+	}
 
 }
 
 void show_find_client_information_screen()
 {
-	cout << "\n-----------------------------------\n";
-	cout << "\tFind Client Screen";
-	cout << "\n-----------------------------------\n";
-	string account_number = read_account_number();
-	Stclients_data  client;
-	vector <Stclients_data>  Vclients = load_clients_data_from_file(file_name);
-	if (find_clients_by_account_number(Vclients, account_number, client))
+	if (checking_of_permissions(enmain_menue_permissions::pFindClient))
 	{
-		print_client_information(client);
+		show_access_denied_message();
+	}
 
-	} else
+	else
 	{
-		cout << "\n\n client with account number (" << account_number << ") is not found ! " << endl;
+		cout << "\n-----------------------------------\n";
+		cout << "\tFind Client Screen";
+		cout << "\n-----------------------------------\n";
+		string account_number = read_account_number();
+		Stclients_data  client;
+		vector <Stclients_data>  Vclients = load_clients_data_from_file(file_name);
+		if (find_clients_by_account_number(Vclients, account_number, client))
+		{
+			print_client_information(client);
+
+		} else
+		{
+			cout << "\n\n client with account number (" << account_number << ") is not found ! " << endl;
+		}
 	}
 }
 
@@ -917,12 +1020,20 @@ bool update_client_by_account_number(string account_number, vector <Stclients_da
 
 void show_update_clients_screen()
 {
-	cout << "\n-----------------------------------\n";
-	cout << "\tupdate Client Screen";
-	cout << "\n-----------------------------------\n";
-	string account_number = read_account_number();
-	vector <Stclients_data> Vclients = load_clients_data_from_file(file_name);
-	update_client_by_account_number(account_number, Vclients);
+	if (checking_of_permissions(enmain_menue_permissions::pUpdateClients))
+	{
+		show_access_denied_message();
+	}
+
+	else
+	{
+		cout << "\n-----------------------------------\n";
+		cout << "\tupdate Client Screen";
+		cout << "\n-----------------------------------\n";
+		string account_number = read_account_number();
+		vector <Stclients_data> Vclients = load_clients_data_from_file(file_name);
+		update_client_by_account_number(account_number, Vclients);
+	}
 }
 
 bool mark_client_for_delete_by_account_number(vector <Stclients_data>& Vclients_data, string account_number)
@@ -972,9 +1083,18 @@ void show_delete_clients_screen()
 	cout << "\tdelete Client Screen";
 	cout << "\n-----------------------------------\n";
 
-	string account_number = read_account_number();
-	vector <Stclients_data> Vclients_data = load_clients_data_from_file(file_name);
-	delete_client_by_account_number(Vclients_data, account_number);
+	if (checking_of_permissions(enmain_menue_permissions::pDeleteClient))
+	{
+		show_access_denied_message();
+	}
+
+	else
+	{
+		string account_number = read_account_number();
+		vector <Stclients_data> Vclients_data = load_clients_data_from_file(file_name);
+		delete_client_by_account_number(Vclients_data, account_number);
+	}
+
 }
 
 
@@ -1035,20 +1155,22 @@ void add_new_clients()
 
 void show_add_new_clients_screen()
 {
-	cout << "\n-----------------------------------\n";
-	cout << "\tadd new clients Client Screen";
-	cout << "\n-----------------------------------\n";
+	if (checking_of_permissions(enmain_menue_permissions::pAddNewClient))
+	{
+		show_access_denied_message();
+	}
 
-	add_new_clients();
+	else
+	{
+		cout << "\n-----------------------------------\n";
+		cout << "\tadd new clients Client Screen";
+		cout << "\n-----------------------------------\n";
+
+		add_new_clients();
+	}
+
 }
 
-void go_back_to_main_menue()
-{
-	cout << "\n\n\nPress any key to go back to Main Menu...";
-	system("pause > 0");
-	show_main_menue_screen();
-
-}
 
 void print_client_record_line(Stclients_data  client)
 {
@@ -1086,10 +1208,20 @@ void print_all_clients_data(vector <Stclients_data> Vclients_data)
 	cout << "\n_______________________________________________________________________________________________________________\n\n";
 }
 
+
+	
 void show_all_client_screen()
 {
-	vector <Stclients_data> clients = load_clients_data_from_file(file_name);
-	print_all_clients_data(clients);
+	if (!checking_of_permissions(enmain_menue_permissions::pListClients))
+	{
+		show_access_denied_message();
+	}
+	else
+	{
+		vector <Stclients_data> clients = load_clients_data_from_file(file_name);
+		print_all_clients_data(clients);
+	}
+
 }
 
 
@@ -1129,6 +1261,7 @@ void perfrom_main_menue_options(enmain_menue_options options)
 
 	case enmain_menue_options::manage_users:
 		system("cls");
+		show_manage_users_menue_screen();
 
 	case enmain_menue_options::logout:
 		system("cls");
@@ -1184,9 +1317,15 @@ void login()
 {
 	bool user_faild = false;
 	stusers user;
+
+
 	do
 	{
-		
+		system("cls");
+		cout << "\n-----------------------------------\n";
+		cout << "\tlogin screen";
+		cout << "\n-----------------------------------\n";
+
 		if (user_faild)
 		{
 			cout << "invalid username/password\n";
@@ -1198,7 +1337,7 @@ void login()
 		cout << "enter username : ";
 		getline(cin >> ws, user.password);
 
-		user_faild = !load_current_user(user.username, user.username);
+		user_faild = !load_current_user(user.username, user.password);
 
 	} while (user_faild);
 
@@ -1209,5 +1348,5 @@ int main()
 {
 	login();
 	system("pause>0");
-
+	return 0;
 }
