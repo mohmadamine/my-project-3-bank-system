@@ -752,7 +752,7 @@ void go_back_to_main_menue()
 
 void show_manage_users_menue_screen()
 {
-	if (checking_of_permissions(enmain_menue_permissions::pManageUsers))
+	if (!checking_of_permissions(enmain_menue_permissions::pManageUsers))
 	{
 		show_access_denied_message();
 		go_back_to_main_menue();
@@ -934,7 +934,7 @@ short read_transactions_menue_options()
 
 void show_transactions_menue_screen()
 {
-	if (checking_of_permissions(enmain_menue_permissions::pTranactions))
+	if (!checking_of_permissions(enmain_menue_permissions::pTranactions))
 	{
 		show_access_denied_message();
 		go_back_to_main_menue();
@@ -959,7 +959,7 @@ void show_transactions_menue_screen()
 
 void show_find_client_information_screen()
 {
-	if (checking_of_permissions(enmain_menue_permissions::pFindClient))
+	if (!checking_of_permissions(enmain_menue_permissions::pFindClient))
 	{
 		show_access_denied_message();
 	}
@@ -1020,7 +1020,7 @@ bool update_client_by_account_number(string account_number, vector <Stclients_da
 
 void show_update_clients_screen()
 {
-	if (checking_of_permissions(enmain_menue_permissions::pUpdateClients))
+	if (!checking_of_permissions(enmain_menue_permissions::pUpdateClients))
 	{
 		show_access_denied_message();
 	}
@@ -1083,7 +1083,7 @@ void show_delete_clients_screen()
 	cout << "\tdelete Client Screen";
 	cout << "\n-----------------------------------\n";
 
-	if (checking_of_permissions(enmain_menue_permissions::pDeleteClient))
+	if (!checking_of_permissions(enmain_menue_permissions::pDeleteClient))
 	{
 		show_access_denied_message();
 	}
@@ -1155,16 +1155,16 @@ void add_new_clients()
 
 void show_add_new_clients_screen()
 {
-	if (checking_of_permissions(enmain_menue_permissions::pAddNewClient))
+	if (!checking_of_permissions(enmain_menue_permissions::pAddNewClient))
 	{
 		show_access_denied_message();
 	}
 
 	else
 	{
-		cout << "\n-----------------------------------\n";
+		cout << "\n---------------------------------------------\n";
 		cout << "\tadd new clients Client Screen";
-		cout << "\n-----------------------------------\n";
+		cout << "\n---------------------------------------------\n";
 
 		add_new_clients();
 	}
@@ -1334,7 +1334,7 @@ void login()
 		cout << "enter username : ";
 		getline(cin >> ws, user.username);
 
-		cout << "enter username : ";
+		cout << "enter password : ";
 		getline(cin >> ws, user.password);
 
 		user_faild = !load_current_user(user.username, user.password);
@@ -1342,6 +1342,7 @@ void login()
 	} while (user_faild);
 
 	show_main_menue_screen();
+
 }
 
 int main()
